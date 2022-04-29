@@ -7,6 +7,7 @@ import tensorflow as tf
 from Datasets import DataLoader, create_data
 from Utils import one_hot, computeAccuracy, evaluate
 import JohnDL as John
+from optimizers import Fixed
 
 
 # 搭建全连接神经网络模型
@@ -33,8 +34,8 @@ class FullConnectionModel(John.Model):
 
 # 训练模型和寻优
 def train(x_train, y_train, x_validation, y_validation):
-    epochs = 20
-    learning_rate = 0.05
+    epochs = 50
+    learning_rate = 0.01
     batch_size = 64
 
     print("Start training...\n")
@@ -42,6 +43,8 @@ def train(x_train, y_train, x_validation, y_validation):
     model = FullConnectionModel(2, 2)
     # 损失函数
     criterion = CategoricalCrossEntropy()
+    # 优化器
+    optimizer = Fixed(model, learning_rate)
 
     # 使用 tqdm 第三方库，调用 tqdm.std.trange 方法给循环加个进度条
     bar = trange(epochs)
@@ -56,7 +59,7 @@ def train(x_train, y_train, x_validation, y_validation):
             # 后向传播
             model.backward(criterion.gradient)
             # 调整参数
-            model.renew_params(learning_rate)
+            optimizer.step()
         # 显示
         accuracy = computeAccuracy(pre_y, Y)
         bar.set_description(f'epoch={epoch + 1: <3}, loss={loss: <10.8}, accuracy={accuracy: <8.6}')  # 给进度条加个描述

@@ -1,30 +1,25 @@
 import pickle
+from optimizers import Fixed
 
 
 class Model:
-    __layers = {"linear": [], "backtrace": []}
+    layers = {"linear": [], "backtrace": []}
     __train = True
 
     def __init__(self, layer):
         if layer is not None:
-            Model.__layers["backtrace"].append(layer)
+            Model.layers["backtrace"].append(layer)
             if layer.name == "linear":
-                Model.__layers["linear"].append(layer)
+                Model.layers["linear"].append(layer)
 
     # 反向传播
     def backward(self, gradient):
         g = gradient
         # pdb.set_trace()
-        count = len(Model.__layers["backtrace"])
+        count = len(Model.layers["backtrace"])
         for i in range(count - 1, -1, -1):
-            ly = Model.__layers["backtrace"][i]
+            ly = Model.layers["backtrace"][i]
             g = ly.backward(g)
-
-    # 更新参数
-    def renew_params(self, lr):
-        for ly in Model.__layers["linear"]:
-            ly.W += lr * ly.grad_W
-            ly.b += lr * ly.grad_b
 
     # 模型预测
     def predict(self, X):
@@ -64,3 +59,30 @@ class Model:
             except:
                 print("IOError")
         return obj
+
+
+class Layer(Model):
+    name = ""
+
+    def __init__(self, layer):
+        super(Layer, self).__init__(layer)
+
+
+# 每层的参数
+class LayerParam(object):
+    """
+    layer_name: 所属层的的名字
+    name: 参数名
+    value: 参数值
+    """
+
+    def __init__(self, layer_name, name, value):
+        self.__name = layer_name + "/" + name
+        self.value = value
+
+        # 梯度
+        self.gradient = None
+
+    @property
+    def name(self):
+        return self.__name
