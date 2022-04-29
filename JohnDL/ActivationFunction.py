@@ -1,6 +1,6 @@
 import numpy as np
 import dlmath
-from JohnBP import Model
+from JohnDL import Model
 
 
 # ReLU

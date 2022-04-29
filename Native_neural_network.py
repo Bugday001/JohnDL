@@ -6,7 +6,7 @@ from tqdm.std import trange
 import tensorflow as tf
 from Datasets import DataLoader, create_data
 from Utils import one_hot, computeAccuracy, evaluate
-import JohnBP as John
+import JohnDL as John
 
 
 # 搭建全连接神经网络模型

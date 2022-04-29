@@ -1,10 +1,11 @@
 # John's DeepLearning wheel
 
 ## 2022.04.29
-今天继续学习卷积。由于卷积内容较多，重开一个新的$\markdown$记录。
+今天继续学习卷积。由于卷积内容较多，重开一个新的Markdown记录。
 
 修复`model.eval()`的Bug。支持预测后重新设置为训练模式。
 
+先完成`padding`
 
 
 ## 2022.04.28
