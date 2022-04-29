@@ -1,5 +1,5 @@
 import pickle
-from optimizers import Fixed
+import numpy as np
 
 
 class Model:
@@ -66,6 +66,11 @@ class Layer(Model):
 
     def __init__(self, layer):
         super(Layer, self).__init__(layer)
+
+    # 初始化参数
+    def generate_param(self, shape):
+        param = np.random.uniform(-1, 1, shape) * 0.1
+        return param
 
 
 # 每层的参数

@@ -9,6 +9,7 @@ class Optimizer:
     def __init__(self, model):
         self.model = model
 
+    # 获取模型每一层的每一个param并更新
     def step(self):
         for ly in self.model.layers["linear"]:
             for param in ly.params:
