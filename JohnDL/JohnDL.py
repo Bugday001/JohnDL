@@ -9,13 +9,12 @@ class Model:
     def __init__(self, layer):
         if layer is not None:
             Model.layers["backtrace"].append(layer)
-            if layer.name == "linear":
+            if layer.name == "linear" or layer.name == "conv2d":
                 Model.layers["linear"].append(layer)
 
     # 反向传播
-    def backward(self, gradient):
+    def backwards(self, gradient):
         g = gradient
-        # pdb.set_trace()
         count = len(Model.layers["backtrace"])
         for i in range(count - 1, -1, -1):
             ly = Model.layers["backtrace"][i]
@@ -68,8 +67,8 @@ class Layer(Model):
         super(Layer, self).__init__(layer)
 
     # 初始化参数
-    def generate_param(self, shape):
-        param = np.random.uniform(-1, 1, shape) * 0.1
+    def generate_param(self, low, high, shape):
+        param = np.random.uniform(low, high, shape) * 0.1
         return param
 
 

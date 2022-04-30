@@ -1,89 +1,83 @@
 import numpy as np
-from Layers import Linear
+from Linear_Layers import Linear, Dropout
+from Convolution_Layer import Conv2D, Flatten
 from ActivationFunction import Relu, Softmax, Sigmoid, Tanh
 from Loss import CrossEntropy, CategoricalCrossEntropy, Mse
-from tqdm.std import trange
+# from tqdm.std import trange
+from tqdm import tqdm, trange
 import tensorflow as tf
-from Datasets import Dataloader, create_data
-from Utils import one_hot, computeAccuracy
-import JohnBP as John
+from Datasets import DataLoader, create_data
+from Utils import one_hot, computeAccuracy, evaluate
+import JohnDL as John
+from optimizers import Fixed
+import math
 
 
 # 搭建全连接神经网络模型
 class FullConnectionModel(John.Model):
     def __init__(self, input_size, class_dim):
-        super().__init__()
-        self.linear1 = Linear(input_size, 48)
+        super().__init__(None)
+        self.conv2d = Conv2D(1, 2, kernel_size=(3, 3))
+        self.flatten = Flatten((2, 26, 26), (2 * 26 * 26,))
         self.relu1 = Relu()
-        self.linear2 = Linear(48, class_dim)
-        self.cross_en = CategoricalCrossEntropy()
+        self.linear2 = Linear(26 * 26 * 2, 128)
+        self.dropout = Dropout(0.1)
+        self.relu2 = Relu()
+        self.linear3 = Linear(128, class_dim)
 
-    def forward(self, X, y):
-        X = X.reshape((-1, 28*28))
-        X = self.linear1.forward(X)
-        X = self.relu1.forward(X)
-        X = self.linear2.forward(X)
-        self.loss = self.cross_en(X, y)
-        return X
-
-    def backward(self, y):
-        self.loss_grad = self.cross_en.gradient
-        self.h2_grad, self.W2_grad = self.linear2.backward(self.loss_grad)
-
-        self.h1_relu_grad = self.relu1.backward(self.h2_grad)
-        self.h1_grad, self.W1_grad = self.linear1.backward(self.h1_relu_grad)
-
-    def predict(self, X, y):
-        pre_y = self.forward(X, y)
-
-        return pre_y
-
-
-# 训练一次模型
-def trainOneStep(model, x_train, y_train, learning_rate=1e-5):
-    pre_y = model.forward(x_train, y_train)
-    model.backward(y_train)
-    model.linear1.W += learning_rate * model.W1_grad[0]
-    model.linear1.b += learning_rate * model.W1_grad[1]
-    model.linear2.W += learning_rate * model.W2_grad[0]
-    model.linear2.b += learning_rate * model.W2_grad[1]
-    # model.linear3.W += -learning_rate * model.W3_grad[0]
-    # model.linear3.b += -learning_rate * model.W3_grad[1]
-    loss = model.loss
-
-    return loss, pre_y
+    def forward(self, X):
+        if len(X.shape) == 3:
+            X = X.reshape((X.shape[0], 1, X.shape[-2], X.shape[-1]))
+        X = self.conv2d(X)
+        X = self.flatten(X)
+        X = self.relu1(X)
+        X = self.linear2(X)
+        X = self.dropout(X)
+        X = self.relu2(X)
+        res = self.linear3(X)
+        return res
 
 
 # 训练模型和寻优
 def train(x_train, y_train, x_validation, y_validation):
-    epochs = 500
-    learning_rate = 0.01
-    batch_size = 64
-    # 在验证集上寻优
-    print("Start seaching the best parameter...\n")
-    model = FullConnectionModel(28*28, 10)
+    epochs = 2
+    learning_rate = 0.005
+    batch_size = 32
 
-    bar = trange(epochs)  # 使用 tqdm 第三方库，调用 tqdm.std.trange 方法给循环加个进度条
-    for epoch in bar:
-        x, y = Dataloader(x_train, y_train, batch_size)
-        for i in range(y_train.shape[0]//batch_size):
-            loss, pre_y = trainOneStep(model, x[i], y[i].reshape((y[i].shape[0], y[i].shape[-1])), learning_rate)
-        accuracy = computeAccuracy(pre_y, y[-2].reshape((y[-2].shape[0], y[-2].shape[-1])))
-        bar.set_description(f'epoch={epoch + 1: <3}, loss={loss: <10.8}, accuracy={accuracy: <8.6}')  # 给进度条加个描述
-    bar.close()
+    print("Start training...\n")
+    # 模型
+    model = FullConnectionModel(28 * 28, 10)
+    # 损失函数
+    criterion = CategoricalCrossEntropy()
+    # 优化器
+    optimizer = Fixed(model, learning_rate)
 
-    validation_loss, validation_accuracy = evaluate(model, x_validation, y_validation)
-    print(f"validation_loss={validation_loss}, validation_accuracy={validation_accuracy}.\n")
+    total_size = math.ceil(y_train.shape[0] // batch_size)
+    for epoch in range(epochs):
+        data_loader = DataLoader(x_train, y_train, batch_size, True)
+        # each batch
+        with tqdm(total=total_size) as _tqdm:  # 使用需要的参数对tqdm进行初始化
+            _tqdm.set_description('epoch: {}/{}'.format(epoch + 1, epochs))  # 设置前缀 一般为epoch的信息
+            for x, y in data_loader():
+                pre_y = model.forward(x)
+                # 计算误差
+                loss = criterion(pre_y, y)
+                # 后向传播
+                model.backwards(criterion.gradient)
+                # 调整参数
+                optimizer.step()
+                # acc
+                acc = computeAccuracy(pre_y, y)
+                _tqdm.set_postfix(
+                    {"loss": '{:.6f}'.format(loss), "ACC": '{:.6f}'.format(acc)})  # 输入一个字典
+                _tqdm.update(1)  # 设置你每一次想让进度条更新的iteration 大小
+        model.eval()
+        validation_accuracy = evaluate(model, x_validation, y_validation)
+        model.train()
+        print(f"validation_accuracy={validation_accuracy}.\n")
 
     return model
 
-
-# 评估模型
-def evaluate(model, x, y):
-    pre_y = model.forward(x, y)
-    loss = model.loss
-    accuracy = computeAccuracy(pre_y, y)
-    return loss, accuracy
 
 # 逻辑与
 def AndTest():
@@ -93,20 +87,19 @@ def AndTest():
     y_train = one_hot(y_train, 2)
     y_test = one_hot(y_test, 2)
 
-    # x_test = np.array([[1, 0]])
-    # y_test = np.array([[0, 1]])
     model = train(x_train, y_train, x_test, y_test)
-    pre_y = model.forward(x_test, y_test)
+    pre_y = model.forward(x_test)
 
     for index, each in enumerate(x_test):
         print(x_test[index], y_test[index], pre_y[index], np.argmax(pre_y[index]))
-    loss, accuracy = evaluate(model, x_train, y_train)
-    print(f'Evaluate the best model, test loss={loss:0<10.8}, accuracy={accuracy:0<8.6}.')
-    path = "Models/test2.John"
+    accuracy = evaluate(model, x_train, y_train)
+    print(f'Evaluate the best model, test accuracy={accuracy:0<8.6}.')
+    path = "Models/test1.John"
     model.save(path)
     print("save models at:", path)
 
 
+# Minst
 def hand_write():
     mnist = tf.keras.datasets.mnist
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -116,9 +109,8 @@ def hand_write():
     y_test = one_hot(y_test, 10)
 
     model = train(X_train, y_train, X_test, y_test)
-
-    loss, accuracy = evaluate(model, X_test, y_test)
-    print(f'Evaluate the best model, test loss={loss:0<10.8}, accuracy={accuracy:0<8.6}.')
+    accuracy = evaluate(model, X_test, y_test)
+    print(f'Evaluate the best model, test accuracy={accuracy:0<8.6}.')
     path = "Models/Minst2.John"
     model.save(path)
     print("save models at:", path)

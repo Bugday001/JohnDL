@@ -1,4 +1,4 @@
-from Native_neural_network import FullConnectionModel
+from Other_Network import FullConnectionModel
 from Datasets import create_data
 from Utils import one_hot
 import numpy as np
@@ -24,7 +24,7 @@ def test_hand_write():
     X_test = x_test / x_test.mean()
     y_test = y_test[10:50]
     Y_test = one_hot(y_test, 10)
-    model = FullConnectionModel.load("Models/Minst1.John")
+    model = FullConnectionModel.load("Models/Minst2.John")
     pre_y = model.predict(X_test)
     pre_y_arg = []
     for index, each in enumerate(x_test):

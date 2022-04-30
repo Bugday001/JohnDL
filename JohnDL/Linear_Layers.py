@@ -1,5 +1,5 @@
 import numpy as np
-from JohnDL import Model, Layer, LayerParam
+from JohnDL import Layer, LayerParam
 
 
 # 全连接
@@ -13,8 +13,8 @@ class Linear(Layer):
 
         # 参考Pytorch初始化参数，均匀分布
         k = 1 / input_dim
-        W = np.random.uniform(low=-np.sqrt(k), high=np.sqrt(k), size=[input_dim, output_dim])
-        b = np.random.uniform(low=-np.sqrt(k), high=np.sqrt(k), size=[output_dim, ])
+        W = self.generate_param(low=-np.sqrt(k), high=np.sqrt(k), shape=[input_dim, output_dim])
+        b = self.generate_param(low=-np.sqrt(k), high=np.sqrt(k), shape=[output_dim, ])
         self.W = LayerParam(Linear.name, "omega", W)
         self.b = LayerParam(Linear.name, "bias", b)
 

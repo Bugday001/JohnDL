@@ -1,5 +1,5 @@
 import numpy as np
-from Layers import Linear, Dropout
+from Linear_Layers import Linear, Dropout
 from ActivationFunction import Relu, Softmax, Sigmoid, Tanh
 from Loss import CrossEntropy, CategoricalCrossEntropy, Mse
 from tqdm.std import trange
@@ -22,7 +22,7 @@ class FullConnectionModel(John.Model):
         self.linear3 = Linear(128, class_dim)
 
     def forward(self, X):
-        # X = X.reshape((-1, 28*28))
+        X = X.reshape((-1, 28*28))
         X = self.linear1(X)
         X = self.relu1(X)
         X = self.linear2(X)
@@ -40,7 +40,7 @@ def train(x_train, y_train, x_validation, y_validation):
 
     print("Start training...\n")
     # 模型
-    model = FullConnectionModel(2, 2)
+    model = FullConnectionModel(28*28, 10)
     # 损失函数
     criterion = CategoricalCrossEntropy()
     # 优化器
@@ -109,6 +109,6 @@ def hand_write():
 
 
 if __name__ == '__main__':
-    AndTest()
-    # hand_write()
+    # AndTest()
+    hand_write()
 

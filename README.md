@@ -1,5 +1,28 @@
 # John's DeepLearning wheel
 
+## 2022.04.30
+假期开始了。
+
+- 利用numpy，优化卷积计算
+- 统一由于添加卷积变动的父类接口
+- 学习卷积的反向传播
+- 测试反向传播中修复了之前父类子类函数名引发的问题，同时似乎要有一个拉平层
+    负责卷积和线性层连接的反向传播(reshape)。
+- 优化了进度条显示。测试卷积时内存占用巨大，反而CPU占用不高了。
+- 减小了batch_size(32)，还是占用内存。训练极慢。
+- 卷积测试：acc到还行看起来。训练了2个epoch， 测试集acc在90%以上。
+    (但是居然花费了近20分钟)。模型大小200MB+，占用了C盘大量虚拟内存。
+    急需优化。模型如下(交叉熵损失)
+    ```txt
+      self.conv2d = Conv2D(1, 2, kernel_size=(3, 3))
+      self.flatten = Flatten((2, 26, 26), (2 * 26 * 26,))
+      self.relu1 = Relu()
+      self.linear2 = Linear(26 * 26 * 2, 128)
+      self.dropout = Dropout(0.1)
+      self.relu2 = Relu()
+      self.linear3 = Linear(128, class_dim)
+    ```
+
 ## 2022.04.29
 今天继续学习卷积。由于卷积内容较多，重开一个新的Markdown记录。
 
