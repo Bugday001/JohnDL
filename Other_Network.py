@@ -17,10 +17,10 @@ import math
 class FullConnectionModel(John.Model):
     def __init__(self, input_size, class_dim):
         super().__init__(None)
-        self.conv2d = Conv2D(1, 2, kernel_size=(3, 3))
-        self.flatten = Flatten((2, 26, 26), (2 * 26 * 26,))
+        self.conv2d = Conv2D(1, 2, kernel_size=(3, 3), padding=1)
+        self.flatten = Flatten((2, 28, 28), (2 * 28 * 28,))
         self.relu1 = Relu()
-        self.linear2 = Linear(26 * 26 * 2, 128)
+        self.linear2 = Linear(28 * 28 * 2, 128)
         self.dropout = Dropout(0.1)
         self.relu2 = Relu()
         self.linear3 = Linear(128, class_dim)

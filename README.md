@@ -1,5 +1,12 @@
 # John's DeepLearning wheel
 
+## 2022.05.01
+继续完善卷积层。
+- 接口功能实现,padding, stride。(基础已实现，但有一些Bug，和需要完善的接口)
+- MaxPooling以及加入，经过了测试。但是训练的更慢了。
+- 有很多善后的事。Stride, padding ,Maxpooling，以及它们的加速。看了几篇关于用numpy什么的
+    加速卷积的博客。难顶。
+    
 ## 2022.04.30
 假期开始了。
 
