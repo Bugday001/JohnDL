@@ -1,5 +1,5 @@
 import numpy as np
-import dlmath
+import Functions as F
 
 
 # 交叉熵损失
@@ -50,7 +50,7 @@ class CategoricalCrossEntropy:
             return loss.sum()
 
         # 转换成概率分布
-        y_prob = dlmath.prob_distribution(y_pred)
+        y_prob = F.prob_distribution(y_pred)
         # pdb.set_trace()
         # 计算误差
         loss = (-y_true * np.log(y_prob)).sum(axis=0) / m

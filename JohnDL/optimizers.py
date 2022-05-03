@@ -31,4 +31,4 @@ class Fixed(Optimizer):
         self.__lr = lr
 
     def update_param(self, param):
-        param.value += self.__lr * param.gradient
+        param.value -= self.__lr * param.gradient

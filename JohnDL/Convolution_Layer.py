@@ -4,7 +4,7 @@ class Padding
 """
 from JohnDL import Model, Layer, LayerParam
 import numpy as np
-from dlmath import convolution2d, calculate_HW, stride_insert, max_pooling
+import Functions as F
 
 
 # 填充
@@ -27,10 +27,10 @@ class Padding(Model):
         pad = self.__pad
         mode = self.__mode
         # 目前只支持四面填充constant
-        X_pad = np.zeros(X.shape[:2] + (X.shape[2] + pad * 2, X.shape[3] + pad * 2))
+        X_pad = np.zeros(X.shape[:2] + (X.shape[2] + pad[0] * 2, X.shape[3] + pad[1] * 2))
         for b in range(X.shape[0]):
             for c in range(X.shape[1]):
-                X_pad[b, c] = np.pad(X[b, c], pad_width=pad, mode=mode, constant_values=self.__value)
+                X_pad[b, c] = np.pad(X[b, c], pad_width=((pad[0],)*2, (pad[1],)*2), mode=mode, constant_values=self.__value)
         return X_pad
 
     def backward(self, gradient):
@@ -62,8 +62,6 @@ class Conv2D(Layer):
         else:
             raise ValueError("Stride should be a int or tuple!")
 
-        self.padding = padding
-
         # 所有卷积核组成的shape
         self.kernel_shape = (self.out_channels, self.in_channels) + self.kernel_size
         # 初始化参数
@@ -73,19 +71,23 @@ class Conv2D(Layer):
         b = self.generate_param(-1, 1, self.out_channels)
         self.b = LayerParam(Conv2D.name, "bias", b)
 
-        self.mem = {}
-        # 计算X梯度时使用给输入梯度padding
-        self.back_padding = Padding(1, 0)
+        self.mem = {"backward": 0}
+
         # 前向传播时由用户输入padding
-        self.forward_padding = Padding(padding, pad_value, pad_mode)
+        if type(padding) == int:
+            self.padding = (padding, padding)
+        else:
+            self.padding = padding
+        self.forward_padding = Padding(self.padding, pad_value, pad_mode)
 
     # 前向
     def __call__(self, X):
-        if self.padding != 0:
-            X = self.forward_padding(X)
 
+        if self.padding != (0, 0):
+            X = self.forward_padding(X)
         self.mem["X"] = X
-        res = convolution2d(X, self.W.value, self.stride)
+
+        res = F.conv_tensor(X, self.W.value, self.stride)
         m = X.shape[0]
         out_c = self.W.value.shape[0]
         for i in range(m):
@@ -97,25 +99,33 @@ class Conv2D(Layer):
         # 反向
 
     def backward(self, grad):
+        X = self.mem["X"]
+        # 若stride不为1则需要填充
+        inserted_grad = grad.sum(axis=0).reshape(self.W.value.shape[:2] + grad.shape[-2:])
+        if self.stride != (1, 1):
+            inserted_grad = F.stride_insert(inserted_grad, self.stride)
+        else:
+            inserted_grad = inserted_grad
+        # 计算X梯度时使用给输入梯度padding
+        if self.mem["backward"] == 0:
+            H_out, W_out = X.shape[-2:]
+            H_in, W_in = inserted_grad.shape[-2:]
+            padding = F.calculate_pad(H_in, W_in, H_out, W_out, self.kernel_size, (1, 1))
+            self.back_padding = Padding(padding, 0)
+            self.mem["backward"] = 1
 
         # 计算b参数梯度,在(dy的)最后两个维度求和
         m = grad.shape[0]
         self.b.gradient = grad.sum(axis=-1).sum(axis=-1).sum(axis=0) / m
 
         # 计算W参数梯度,X与dy卷积
-        X = self.mem["X"]
-        grad = grad.sum(axis=0).reshape(self.W.value.shape[:2] + grad.shape[-2:])
-        # 若stride不为1则需要填充
-        if self.stride != (1, 1):
-            inserted_grad = stride_insert(grad, self.stride)
-        else:
-            inserted_grad = grad
-        self.W.gradient = convolution2d(X, grad, (1, 1)).sum(axis=0).reshape(self.kernel_shape)
+        self.W.gradient = F.conv_tensor(X, inserted_grad, (1, 1)).sum(axis=0).reshape(self.kernel_shape)
 
-        # 计算X的梯度，dy 0-padding border of size 1, conv with W.T
+        # 计算X的梯度，dy 0-padding border of size 1, conv with W'
         pad_grad = self.back_padding(inserted_grad)
-        out_grad = convolution2d(pad_grad, np.rot90(self.W.value, 2), (1, 1))
+        out_grad = F.conv_tensor(pad_grad, np.rot90(self.W.value, 2), (1, 1))
         # padding的backward直接返回
+        # out_grad = self.backwards(out_grad)
         return out_grad
 
     # 返回参数，用于更新参数值
@@ -155,7 +165,7 @@ class MaxPooling(Layer):
 
     def __call__(self, X):
         self.mem["X"] = X
-        return max_pooling(X, self.pool_size, self.stride)
+        return F.max_pooling(X, self.pool_size, self.stride)
 
     # 反向
     def backward(self, grad):

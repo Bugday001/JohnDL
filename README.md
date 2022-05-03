@@ -1,5 +1,12 @@
 # John's DeepLearning wheel
 
+## 2022.05.02
+- Stride和padding已经可以使用，但输入要求较为严格。除了要输入规定的数据类型，
+    还要调整Stride,padding,kernel_size大小使卷积可以覆盖到每一个元素。
+
+- 看到几个卷积计算优化的方法，打算试试np.as_strided。
+- 优化卷积和反向传播梯度处理的程序后，速度有明显提升。
+
 ## 2022.05.01
 继续完善卷积层。
 - 接口功能实现,padding, stride。(基础已实现，但有一些Bug，和需要完善的接口)

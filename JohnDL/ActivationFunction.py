@@ -1,5 +1,5 @@
 import numpy as np
-import dlmath
+import Functions as F
 from JohnDL import Model
 
 
@@ -62,7 +62,7 @@ class Sigmoid(Model):
         self.__grad = None
 
     def __call__(self, in_batch):
-        out = dlmath.sigmoid(in_batch)
+        out = F.sigmoid(in_batch)
         self.__grad = out * (1 - out)
         return out
 
@@ -82,7 +82,7 @@ class Tanh:
         self.__grad = None
 
     def __call__(self, in_batch):
-        out = dlmath.tanh(in_batch)
+        out = F.tanh(in_batch)
         self.__grad = 1 - out ** 2
         return out
 

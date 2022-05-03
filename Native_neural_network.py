@@ -17,14 +17,14 @@ import math
 class FullConnectionModel(John.Model):
     def __init__(self, input_size, class_dim):
         super().__init__(None)
-        self.conv2d = Conv2D(1, 2, kernel_size=(3, 3), padding=1)
+        self.conv2d = Conv2D(1, 2, kernel_size=(3, 3), padding=1, stride=(3, 3))
         self.maxpooling = MaxPooling((2, 2))
-        self.flatten = Flatten((2, 14, 14), (2 * 14 * 14,))
+        self.flatten = Flatten((2, 5, 5), (2 * 5 * 5,))
         self.relu1 = Relu()
-        self.linear2 = Linear(14 * 14 * 2, 128)
+        self.linear2 = Linear(5 * 5 * 2, 64)
         self.dropout = Dropout(0.1)
         self.relu2 = Relu()
-        self.linear3 = Linear(128, class_dim)
+        self.linear3 = Linear(64, class_dim)
 
     def forward(self, X):
         if len(X.shape) == 3:
@@ -63,7 +63,7 @@ def train(x_train, y_train, x_validation, y_validation):
             for x, y in data_loader():
                 pre_y = model.forward(x)
                 # 计算误差
-                loss = criterion(pre_y, y)
+                loss = criterion(y, pre_y)
                 # 后向传播
                 model.backwards(criterion.gradient)
                 # 调整参数
