@@ -43,7 +43,7 @@ class FullConnectionModel(John.Model):
 # 训练模型和寻优
 def train(x_train, y_train, x_validation, y_validation):
     epochs = 2
-    learning_rate = 0.005
+    learning_rate = 0.001
     batch_size = 32
 
     print("Start training...\n")

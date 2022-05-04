@@ -32,6 +32,7 @@ class CategoricalCrossEntropy:
     def __init__(self, form_logits=True):
         self.__form_logists = form_logits
         self.__grad = None
+        self.epsilon = 1e-7  # 防止求导后分母为 0
 
     '''
     输入形状为(m, n)
@@ -53,7 +54,7 @@ class CategoricalCrossEntropy:
         y_prob = F.prob_distribution(y_pred)
         # pdb.set_trace()
         # 计算误差
-        loss = (-y_true * np.log(y_prob)).sum(axis=0) / m
+        loss = (-y_true * np.log(y_prob+self.epsilon)).sum(axis=0) / m
         # 计算梯度
         self.__grad = (y_prob - y_true) / m
 

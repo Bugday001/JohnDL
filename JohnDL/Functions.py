@@ -22,6 +22,9 @@ x shape (m, ..., n)
 def prob_distribution(x):
     xshape = x.shape
     x = x.reshape((-1, xshape[-1]))
+    # max normalization
+    x -= x.max(axis=1, keepdims=True)
+    # np.max(f)
 
     expval = np.exp(x)
     sum = expval.sum(axis=1).reshape(-1, 1)
@@ -89,6 +92,12 @@ def convolution2d(X, W, stride):
 
 # 优化卷积
 def conv_tensor(X, W, stride):
+    """
+    :param X: N, C, H, W
+    :param W: KN, C, KH, KW
+    :param stride: a tuple
+    :return: N, kn, oh, ow
+    """
     kernel_size = W.shape[-2:]
     A = split_by_strides(X, kernel_size, stride)
     # A: (N,C,OH,OW,KH,KW)
@@ -129,22 +138,14 @@ def stride_insert(src, stride):
 
 # 最大池化函数
 def max_pooling(X, pool_size, stride=None):
-    N, C, H, W = X.shape
-    kh, kw = pool_size
-    out_h, out_w = calculate_HW(H, W, (0, 0), pool_size, stride)
-    res = np.zeros((N, C, out_h, out_w))
-    # 最终输出形状：b*c*out_h*out_w
-    for i in range(N):
-        # 关于batch，目前只能串行完成
-        for m in range(0, C):
-            for n in range(stride[0], H + 1, stride[0]):
-                for g in range(stride[1], W + 1, stride[1]):
-                    # 计算每一个位置的值
-                    row = n - stride[0]
-                    col = g - stride[1]
-                    res[i, m, row // stride[0], col // stride[1]] = \
-                        np.max(X[i, m, row:(kh + row), col:(kw + col)])
-    return res
+    A = split_by_strides(X, pool_size, stride)
+    return A.max(axis=(-1, -2), initial=0)
+
+
+def avg_pooling(X, pool_size, stride=None):
+    A = split_by_strides(X, pool_size, stride)
+
+    return A.mean(axis=(-1, -2))
 
 
 # 将数据划分点乘代替卷积
@@ -175,7 +176,8 @@ if __name__ == "__main__":
     # print(padding)
     # print(calculate_HW(H_out, W_out, padding, kernel_size, (1, 1)))
     #
-    a = np.array([[[[1, -1, 2],
-                    [-1, 2, 3],
-                    [4, 1, -1]]]])
-    print(split_by_strides(a, (2, 2), (1, 1)))
+    a = np.array([[[[1, -1, 2, 4],
+                    [-1, 2, 3, 5],
+                    [4, 1, -1, 9],
+                    [-1, 2, 3, 5]]]])
+    print(avg_pooling(a, (2, 2), (2, 2)))

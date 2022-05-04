@@ -6,6 +6,7 @@ from JohnDL import Model
 # ReLU
 class Relu(Model):
     name = 'relu'
+
     def __init__(self):
         super().__init__(self)
         self.mem = {}
@@ -22,6 +23,7 @@ class Relu(Model):
 # Softmax
 class Softmax(Model):
     name = 'softmax'
+
     def __init__(self):
         super().__init__(self)
         self.mem = {}

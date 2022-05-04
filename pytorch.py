@@ -1,90 +1,46 @@
 import torch
-import torch.utils.data
-from torch import optim, nn
-from torchvision import datasets
-from torchvision.transforms import transforms
-import torch.nn.functional as F
-
-batch_size = 200
-learning_rate = 0.001
-epochs = 20
-
-train_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('mnistdata', train=True, download=False,
-                   transform=transforms.Compose([
-                       transforms.ToTensor(),
-                       transforms.Normalize((0.1307,), (0.3081,))
-                   ])),
-    batch_size=batch_size, shuffle=True)
-
-test_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('mnistdata', train=False, download=False,
-                   transform=transforms.Compose([
-                       transforms.ToTensor(),
-                       transforms.Normalize((0.1307,), (0.3081,))
-                   ])),
-    batch_size=batch_size, shuffle=True)
+import torch.nn as nn
+import torch.optim as optim
+from torch import autograd
 
 
-class MLP(nn.Module):
-
+class Conv_net(nn.Module):
     def __init__(self):
-        super(MLP, self).__init__()
-
-        self.model = nn.Sequential(
-            nn.Linear(784, 200),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(200, 200),
-            nn.LeakyReLU(inplace=True),
-            nn.Linear(200, 10),
-            nn.LeakyReLU(inplace=True)
-        )
+        super(Conv_net, self).__init__()
+        self.conv = nn.Conv2d(2, 4, (3, 3), bias=False)  # 为了方便，不设置偏置
 
     def forward(self, x):
-        x = self.model(x)
+        x = self.conv(x)
+        return x  # 为了方便，这里不做flatten以及全连接操作，直接对feature map各元素求和作为输出
 
-        return x
+
+criterion=nn.MSELoss()
+convnet=Conv_net()
+
+init_weight=torch.ones((4, 2, 3, 3), dtype=torch.float, requires_grad=True)
+
+# 用上述的自定义初始权值替换默认的随机初始值
+convnet.conv.weight.data = init_weight
+
+input_=torch.arange(2*6*6*2, dtype=torch.float, requires_grad=True).view(2, 2, 6, 6)
+target = torch.tensor(250.) # 随意设定的值
+output = convnet(input_) # 网络输出
+
+# 计算损失
+loss=criterion(output,target)
+
+# 打印看看结果
+print("MSE Loss:", loss.item())
 
 
-device = torch.device('cuda:0')
-net = MLP().to(device)
-optimizer = optim.Adam(net.parameters(), lr=learning_rate)
-criteon = nn.CrossEntropyLoss().to(device)
+# 将之前buffer中的梯度清零
+convnet.zero_grad()
 
-for epoch in range(epochs):
+# 反向传播计算梯度
+# grad = autograd.grad(outputs=output, inputs=convnet.conv.weight, grad_outputs=torch.ones_like(output))
+# print("weight", grad)
+grad = autograd.grad(outputs=output, inputs=input_, grad_outputs=torch.ones_like(output))
+print("input", grad)
+# 打印看看卷积核各个参数的梯度情况
+print('卷积核参数梯度为:', convnet.conv.weight.grad)
 
-    for batch_idx, (data, target) in enumerate(train_loader):
-
-        data = data.view(-1, 28*28)
-        data, target = data.to(device), target.to(device)
-
-        logits = net(data)
-        loss = criteon(logits, target)
-
-        optimizer.zero_grad()
-        loss.backward()
-
-        optimizer.step()
-
-        if batch_idx % 100 == 0:
-            print('Train Epoch : {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx*len(data), len(train_loader.dataset),
-                100.*batch_idx/len(train_loader), loss.item()
-            ))
-
-    test_loss = 0
-    correct = 0
-    for data, target in test_loader:
-        data = data.view(-1, 28*28)
-        data, target = data.to(device), target.to(device)
-        logits = net(data)
-        test_loss += criteon(logits, target).item()
-
-        pred = logits.data.max(1)[1]
-        correct += pred.eq(target.data).sum()
-
-    test_loss /= len(test_loader.dataset)
-    print('\nTest set : Averge loss: {:.4f}, Accurancy: {}/{}({:.3f}%)'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100.*correct/len(test_loader.dataset)
-        ))

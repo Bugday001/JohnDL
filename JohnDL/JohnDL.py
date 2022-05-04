@@ -1,5 +1,6 @@
 import pickle
 import numpy as np
+import time
 
 
 class Model:
@@ -7,7 +8,7 @@ class Model:
     __train = True
 
     def __init__(self, layer):
-        if layer is not None:
+        if layer is not None and layer.name != "padding":
             Model.layers["backtrace"].append(layer)
             if layer.name == "linear" or layer.name == "conv2d":
                 Model.layers["linear"].append(layer)
@@ -17,8 +18,10 @@ class Model:
         g = gradient
         count = len(Model.layers["backtrace"])
         for i in range(count - 1, -1, -1):
+            # start = time.time()
             ly = Model.layers["backtrace"][i]
             g = ly.backward(g)
+            # print(ly.name, time.time()-start)
 
     # 模型预测
     def predict(self, X):
@@ -69,6 +72,7 @@ class Layer(Model):
     # 初始化参数
     def generate_param(self, low, high, shape):
         param = np.random.uniform(low, high, shape) * 0.1
+        # param = np.ones(shape)
         return param
 
 

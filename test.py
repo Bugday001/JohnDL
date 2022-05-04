@@ -1,4 +1,4 @@
-from Other_Network import FullConnectionModel
+from Native_neural_network import FullConnectionModel
 from Datasets import create_data
 from Utils import one_hot
 import numpy as np
@@ -20,11 +20,12 @@ def testAnd():
 def test_hand_write():
     mnist = tf.keras.datasets.mnist
     (_, _), (x_test, y_test) = mnist.load_data()
-    x_test = x_test[10:50]
+    x_test = x_test[10:60]
     X_test = x_test / x_test.mean()
-    y_test = y_test[10:50]
+    y_test = y_test[10:60]
     Y_test = one_hot(y_test, 10)
     model = FullConnectionModel.load("Models/Minst2.John")
+    model.eval()
     pre_y = model.predict(X_test)
     pre_y_arg = []
     for index, each in enumerate(x_test):

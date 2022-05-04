@@ -21,8 +21,10 @@ class Padding(Model):
         self.__pad = pad
         self.__value = value
         self.__mode = mode
+        self.mem = {}
 
     def __call__(self, X):
+        self.mem["X_shape"] = X.shape
         # 直接利用numpy的pad
         pad = self.__pad
         mode = self.__mode
@@ -34,7 +36,9 @@ class Padding(Model):
         return X_pad
 
     def backward(self, gradient):
-        return gradient
+        pad = self.__pad
+        X_shape = self.mem["X_shape"]
+        return gradient[..., pad[0]:(gradient.shape[2]-pad[0]), pad[1]:(gradient.shape[3]-pad[1])]
 
 
 # 2d卷积层
@@ -88,12 +92,10 @@ class Conv2D(Layer):
         self.mem["X"] = X
 
         res = F.conv_tensor(X, self.W.value, self.stride)
-        m = X.shape[0]
         out_c = self.W.value.shape[0]
-        for i in range(m):
-            for j in range(out_c):
-                # 每一个输出通道加上偏置
-                res[i][j] -= self.b.value[j]
+        for j in range(out_c):
+            # 每一个输出通道加上偏置
+            res[:, j] += self.b.value[j]
         return res
 
         # 反向
@@ -101,11 +103,10 @@ class Conv2D(Layer):
     def backward(self, grad):
         X = self.mem["X"]
         # 若stride不为1则需要填充
-        inserted_grad = grad.sum(axis=0).reshape(self.W.value.shape[:2] + grad.shape[-2:])
         if self.stride != (1, 1):
-            inserted_grad = F.stride_insert(inserted_grad, self.stride)
+            inserted_grad = F.stride_insert(grad, self.stride)
         else:
-            inserted_grad = inserted_grad
+            inserted_grad = grad
         # 计算X梯度时使用给输入梯度padding
         if self.mem["backward"] == 0:
             H_out, W_out = X.shape[-2:]
@@ -119,13 +120,17 @@ class Conv2D(Layer):
         self.b.gradient = grad.sum(axis=-1).sum(axis=-1).sum(axis=0) / m
 
         # 计算W参数梯度,X与dy卷积
-        self.W.gradient = F.conv_tensor(X, inserted_grad, (1, 1)).sum(axis=0).reshape(self.kernel_shape)
+        X = X.sum(axis=0).reshape((self.in_channels, 1)+X.shape[-2:])
+        # 在batch上求和,output shape:(C_, C, oh, ow)
+        inserted_grad_sum = inserted_grad.sum(axis=0).reshape((self.kernel_shape[0], 1)+inserted_grad.shape[-2:])
+        gradient = F.conv_tensor(X, inserted_grad_sum, (1, 1))
+        self.W.gradient = gradient.transpose((1, 0, 2, 3)) / m
 
         # 计算X的梯度，dy 0-padding border of size 1, conv with W'
         pad_grad = self.back_padding(inserted_grad)
-        out_grad = F.conv_tensor(pad_grad, np.rot90(self.W.value, 2), (1, 1))
-        # padding的backward直接返回
-        # out_grad = self.backwards(out_grad)
+        out_grad = F.conv_tensor(pad_grad, np.rot90(self.W.value, 2, axes=(2, 3)).transpose((1, 0, 2, 3)), (1, 1))
+        # padding的backward
+        out_grad = self.forward_padding.backward(out_grad)
         return out_grad
 
     # 返回参数，用于更新参数值
@@ -165,33 +170,47 @@ class MaxPooling(Layer):
 
     def __call__(self, X):
         self.mem["X"] = X
-        return F.max_pooling(X, self.pool_size, self.stride)
+        out = F.max_pooling(X, self.pool_size, self.stride)
+        self.index = out.repeat(self.pool_size[1], axis=-1).repeat(self.pool_size[0], axis=-2) == X  # 记录最大值的位置
+        return out
 
     # 反向
     def backward(self, grad):
-        X = self.mem["X"]
-        b, c, h, w = grad.shape
-        stride = self.stride
-        kh, kw = self.pool_size
-        res = np.zeros_like(X)
-        for i in range(b):
-            # 关于batch，目前只能串行完成
-            for m in range(0, c):
-                for n in range(stride[0], X.shape[-2] + 1, stride[0]):
-                    for g in range(stride[1], X.shape[-1] + 1, stride[1]):
-                        # 计算每一个位置的值
-                        row = n - stride[0]
-                        col = g - stride[1]
-                        # 计算每一个位置的值
-                        res[i, m, row:(kh + row), col:(kw + col)] = \
-                            np.where(np.abs(X[i, m, row:(kh + row), col:(kw + col)] - np.max(X[i, m, row:(kh + row), col:(kw + col)])) < 1e-7,\
-                                     grad[i, m, row // stride[0], col // stride[1]], 0)
-        return res
+        output = grad.repeat(self.pool_size[1], axis=-1).repeat(self.pool_size[0], axis=-2) * self.index
+        return output
+
+
+# 平均池化
+class AvgPooling(Layer):
+    name = "Avgpooling"
+
+    def __init__(self, pool_size=(2, 2), stride=None, padding=0):
+        super().__init__(self)
+        self.pool_size = pool_size
+        if stride is None:
+            self.stride = pool_size
+        else:
+            self.stride = stride
+
+        self.mem = {}
+
+    def __call__(self, X):
+        self.mem["X"] = X
+        return F.avg_pooling(X, self.pool_size, self.stride)
+
+    # 反向
+    def backward(self, grad):
+        grad = grad / (self.pool_size[0]*self.pool_size[1])
+        return grad.repeat(self.pool_size[1], axis=-1).repeat(self.pool_size[0], axis=-2)
 
 
 if __name__ == "__main__":
-    padding = Padding(1, 0)
-    x = np.array([[1, 2, 3],
-                  [4, 5, 6],
-                  [7, 8, 9]])
-    print(padding(x))
+    pooling = MaxPooling((2, 2))
+    X = np.array([[[[1, -1, 2, 4],
+                    [-1, 2, 3, 5],
+                    [4, 1, -1, 9],
+                    [-1, 2, 3, 5]]]])
+    pooling(X)
+    a = np.array([[[[1, 2],
+                    [3, 4]]]])
+    print(pooling.backward(a))

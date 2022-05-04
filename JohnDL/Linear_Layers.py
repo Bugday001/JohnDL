@@ -64,7 +64,7 @@ class Linear(Layer):
 
 # Dropout
 class Dropout(Layer):
-    tag = 'dropout'
+    name = 'dropout'
 
     '''
     drop_ratio: 保留概率取值区间为(0, 1], 默认0.5.
@@ -106,3 +106,78 @@ class Dropout(Layer):
 
     def reset(self):
         self.__mark = None
+
+
+class BatchNormalization(Layer):
+    name = "BN"
+    """Batch normalization.
+    # 特征维度（全连接层中神经元的个数或者卷积中特征图通道的个数）
+    # 用于区分当前是对全连接层标准化还是卷积层
+    eps：平滑处理
+    """
+    def __init__(self, num_features=None, num_dims=4, momentum=0.99, eps=1e-5):
+        self.momentum = momentum
+        self.running_mean = None
+        self.running_var = None
+
+        super(BatchNormalization, self).__init__(self)
+
+        self.inshape = [1, num_features]
+        if num_dims == 4:
+            self.inshape = [1, num_features, 1, 1]
+            # 由于后面标准化时是以每个特征图为单位进行计算，因此会用到广播机制，所以需要保持4个维度
+        self.momentum = momentum
+        self.num_features = num_features
+        self.eps = eps
+        self.gamma = LayerParam(BatchNormalization.name, "gamma", np.ones(self.inshape))
+        self.beta = LayerParam(BatchNormalization.name, "beta", np.zeros(self.inshape))
+
+    def __call__(self, X, training=True):
+        # Initialize running mean and variance if first run
+        if self.running_mean is None:
+            self.running_mean = np.mean(X, axis=0)
+            self.running_var = np.var(X, axis=0)
+
+        if BatchNormalization.is_training:
+            mean = np.mean(X, axis=0)
+            var = np.var(X, axis=0)
+            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean
+            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var
+        else:
+            mean = self.running_mean
+            var = self.running_var
+
+        # Statistics saved for backward pass
+        self.X_centered = X - mean
+        self.stddev_inv = 1 / np.sqrt(var + self.eps)
+
+        X_norm = self.X_centered * self.stddev_inv
+        output = self.gamma.value * X_norm + self.beta.value
+
+        return output
+
+    def backward(self, accum_grad):
+
+        # Save parameters used during the forward pass
+        gamma = self.gamma.value
+
+        # If the layer is trainable the parameters are updated
+        X_norm = self.X_centered * self.stddev_inv
+        self.gamma.gradient = np.sum(accum_grad * X_norm, axis=0)
+        self.beta.gradient = np.sum(accum_grad, axis=0)
+
+        batch_size = accum_grad.shape[0]
+
+        # The gradient of the loss with respect to the layer inputs (use weights and statistics from forward pass)
+        accum_grad = (1 / batch_size) * gamma * self.stddev_inv * (
+            batch_size * accum_grad
+            - np.sum(accum_grad, axis=0)
+            - self.X_centered * self.stddev_inv**2 * np.sum(accum_grad * self.X_centered, axis=0)
+            )
+
+        return accum_grad
+
+    # 返回参数，用于更新参数值
+    @property
+    def params(self):
+        return [self.gamma, self.beta]
