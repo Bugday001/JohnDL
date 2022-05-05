@@ -4,24 +4,25 @@ import time
 
 
 class Model:
-    layers = {"linear": [], "backtrace": []}
+    layers = {"has_param": [], "trace": []}
     __train = True
 
-    def __init__(self, layer):
-        if layer is not None and layer.name != "padding":
-            Model.layers["backtrace"].append(layer)
-            if layer.name == "linear" or layer.name == "conv2d":
-                Model.layers["linear"].append(layer)
-
-    # 反向传播
+    # 反向传播，卷积层使用了95%的时间
     def backwards(self, gradient):
         g = gradient
-        count = len(Model.layers["backtrace"])
+        count = len(Model.layers["trace"])
         for i in range(count - 1, -1, -1):
             # start = time.time()
-            ly = Model.layers["backtrace"][i]
+            ly = Model.layers["trace"][i]
             g = ly.backward(g)
             # print(ly.name, time.time()-start)
+
+    # 添加模型
+    def add_model(self, layer):
+        if layer is not None and layer.name != "padding":
+            Model.layers["trace"].append(layer)
+            if layer.name == "linear" or layer.name == "conv2d" or layer.name == "BN":
+                Model.layers["has_param"].append(layer)
 
     # 模型预测
     def predict(self, X):
@@ -41,7 +42,7 @@ class Model:
     def is_training(self):
         return Model.__train
 
-    # 用户来实现
+    # 用户实现
     def forward(self, X):
         raise Exception("forward not implement")
 
@@ -65,9 +66,6 @@ class Model:
 
 class Layer(Model):
     name = ""
-
-    def __init__(self, layer):
-        super(Layer, self).__init__(layer)
 
     # 初始化参数
     def generate_param(self, low, high, shape):
@@ -94,3 +92,24 @@ class LayerParam(object):
     @property
     def name(self):
         return self.__name
+
+
+# 序列
+class Unit(Model):
+    def __init__(self, *args):
+        self.layers = {"unit_trace": []}
+        self.isTraced = False
+        for module in args:
+            if module is not None:
+                self.layers["unit_trace"].append(module)
+
+    # 正向传播
+    def __call__(self, X):
+        for ly in self.layers["unit_trace"]:
+            X = ly(X)
+        # 若第一次训练，将单元中的层加入trace list，backward时使用
+        if not self.isTraced:
+            for ly in self.layers["unit_trace"]:
+                self.add_model(ly)
+            self.isTraced = True
+        return X

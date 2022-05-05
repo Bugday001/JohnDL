@@ -11,7 +11,7 @@ class Optimizer:
 
     # 获取模型每一层的每一个param并更新
     def step(self):
-        for ly in self.model.layers["linear"]:
+        for ly in self.model.layers["has_param"]:
             for param in ly.params:
                 self.update_param(param)
 

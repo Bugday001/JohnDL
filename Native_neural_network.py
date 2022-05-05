@@ -39,7 +39,7 @@ class FullConnectionModel(John.Model):
         self.relu0 = Relu()
         self.conv2d2 = Conv2D(4, 4, kernel_size=(3, 3), padding=1, stride=(1, 1))
         self.maxpool2 = MaxPooling((2, 2))
-        self.flatten = Flatten((4, 7, 7), (4 * 7 * 7,))
+        self.flatten = Flatten()
         self.relu1 = Relu()
         self.linear2 = Linear(7 * 7 * 4, 128)
         self.dropout = Dropout(0.1)

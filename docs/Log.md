@@ -1,10 +1,19 @@
 # John's DeepLearning wheel
 
+## 2022.05.05
+&emsp;&emsp;尝试调整一下整个架构，加入一些新的属性和用法。但由于函数和用法是模仿Pytorch，
+而我自己的思想似乎还停留在静态图(个人认为)，导致在添加一些新的属性和用法时出现了来自底层的冲突。
+
+- 调整网络结构，同时学习`BatchNormalization`。
+- 已实现`BatchNormalization`
+    ——[BN](https://zhuanlan.zhihu.com/p/504159192)
+- 待完善，Uint和普通Layer交替使用问题
+
 ## 2022.05.04
 
 - 发现问题，损失函数的loss使NAN导致参数无法更新。
 - 解决了一些Bug，怀疑加入卷积后其实并非没用学习，acc没用上涨，只是由于计算太慢，
-    和超参数,网络的设置导致上升较为缓慢。在加入`BatchNormalization`后两个epoch(lr=0.01)后可以达到0.9左右。
+    和超参数,网络的设置导致上升较为缓慢。
 - 尝试加入其他优化器，看是否能够抑制此现象。
 - 通过计时发现是Maxpooling的backward花费了大量时间(一大半)
 - 使用AvgPooling后速度有巨大提升。MaxPooling中使用了不少循环，准备用numpy的

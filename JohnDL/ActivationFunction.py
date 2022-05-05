@@ -8,7 +8,7 @@ class Relu(Model):
     name = 'relu'
 
     def __init__(self):
-        super().__init__(self)
+
         self.mem = {}
 
     def __call__(self, X):
@@ -25,7 +25,7 @@ class Softmax(Model):
     name = 'softmax'
 
     def __init__(self):
-        super().__init__(self)
+
         self.mem = {}
         self.epsilon = 1e-12  # 防止求导后分母为 0
 
@@ -60,7 +60,7 @@ class Sigmoid(Model):
     name = 'sigmoid'
 
     def __init__(self):
-        super().__init__(self)
+
         self.__grad = None
 
     def __call__(self, in_batch):

@@ -1,5 +1,5 @@
 import numpy as np
-from JohnDL import Layer, LayerParam
+from JohnDL import Layer, LayerParam, Model
 
 
 # 全连接
@@ -9,7 +9,7 @@ class Linear(Layer):
     count = 0
 
     def __init__(self, input_dim, output_dim):
-        super().__init__(self)
+        super().__init__()
 
         # 参考Pytorch初始化参数，均匀分布
         k = 1 / input_dim
@@ -63,7 +63,7 @@ class Linear(Layer):
 
 
 # Dropout
-class Dropout(Layer):
+class Dropout(Model):
     name = 'dropout'
 
     '''
@@ -74,7 +74,7 @@ class Dropout(Layer):
     def __init__(self, drop_ratio=0.5):
         self.__drop_ratio = drop_ratio
 
-        super().__init__(self)
+        super().__init__()
         self.__mark = None
 
     def __call__(self, in_batch):
@@ -120,11 +120,11 @@ class BatchNormalization(Layer):
         self.running_mean = None
         self.running_var = None
 
-        super(BatchNormalization, self).__init__(self)
+        super(BatchNormalization, self).__init__()
 
-        self.inshape = [1, num_features]
+        self.inshape = (1,)+ num_features
         if num_dims == 4:
-            self.inshape = [1, num_features, 1, 1]
+            self.inshape = (1,)+ num_features
             # 由于后面标准化时是以每个特征图为单位进行计算，因此会用到广播机制，所以需要保持4个维度
         self.momentum = momentum
         self.num_features = num_features

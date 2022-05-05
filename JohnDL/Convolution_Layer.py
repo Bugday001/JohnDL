@@ -17,7 +17,7 @@ class Padding(Model):
     """
 
     def __init__(self, pad, value=0, mode="constant"):
-        super().__init__(self)
+
         self.__pad = pad
         self.__value = value
         self.__mode = mode
@@ -54,7 +54,7 @@ class Conv2D(Layer):
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, pad_mode="constant", pad_value=0):
-        super(Conv2D, self).__init__(self)
+
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -140,16 +140,17 @@ class Conv2D(Layer):
 
 
 # 拉平卷积与线性层连接，特别是反向传播时reshape
-class Flatten(Layer):
+class Flatten(Model):
     name = "flatten"
 
-    def __init__(self, in_shape, out_shape):
-        self.__inshape = in_shape
-        self.__outshape = out_shape
-        super().__init__(self)
+    def __init__(self):
+
+        self.__outshape = None
+        self.__inshape = None
 
     def __call__(self, X):
-        return X.reshape((-1,) + self.__outshape)
+        self.__inshape = X.shape[1:]
+        return X.reshape((-1,) + (X[0].size, ))
 
     def backward(self, gradient):
         return gradient.reshape((-1,) + self.__inshape)
@@ -159,7 +160,7 @@ class MaxPooling(Layer):
     name = "maxpooling"
 
     def __init__(self, pool_size=(2, 2), stride=None, padding=0):
-        super().__init__(self)
+
         self.pool_size = pool_size
         if stride is None:
             self.stride = pool_size
