@@ -18,9 +18,9 @@
 
 ### Conv2D
 
-![Conv2D](images/Conv2D.png)
+![Conv2D](../images/Conv2D.png)
 ——from pytorch.org
-![卷积例子](images/Con2d_eg.png)
+![卷积例子](../images/Con2d_eg.png)
 先用最简单的for循环实现基本功能在考虑优化的事。
 
 

@@ -7,7 +7,7 @@
 
 目前已有支持：
 - 全连接，卷积(Conv2D)
-- Maxpooling, Avgpooling
+- Maxpooling, Avgpooling, BatchNormalization, Dropout
 - Softmax, tanh, Relu, Sigmoid
 - 交叉损失熵，均方误差损失
 

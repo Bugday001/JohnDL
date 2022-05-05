@@ -7,7 +7,9 @@
 - 调整网络结构，同时学习`BatchNormalization`。
 - 已实现`BatchNormalization`
     ——[BN](https://zhuanlan.zhihu.com/p/504159192)
-- 待完善，Uint和普通Layer交替使用问题
+
+### 待完善
+Uint和普通Layer交替使用问题
 
 ## 2022.05.04
 

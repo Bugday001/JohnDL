@@ -44,7 +44,7 @@ class FullConnectionModel(Jh.Model):
         self.LinearUint = Jh.Unit(
             Relu(),
             Linear(7 * 7 * 4, 128),
-            Dropout(0.1),
+            # Dropout(0.1),
             Relu(),
             Linear(128, class_dim),
         )
@@ -91,7 +91,7 @@ def train(x_train, y_train, x_validation, y_validation):
                 # acc
                 acc = computeAccuracy(pre_y, y)
                 _tqdm.set_postfix(
-                    {"loss": '{:.6f}'.format(loss), "ACC": '{:.6f}'.format(acc)})  # 输入一个字典
+                    {"loss": '{:.6f}'.format(loss), "acc": '{:.6f}'.format(acc)})  # 输入一个字典
                 _tqdm.update(1)  # 设置你每一次想让进度条更新的iteration 大小
                 end = time.time()
                 # 打印各部分时间，forward:0.33, backward: 0.87, whole: 1.193
