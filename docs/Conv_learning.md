@@ -21,9 +21,6 @@
 ![Conv2D](../images/Conv2D.png)
 
 ——from pytorch.org
-![卷积例子](../images/Con2d_eg.png)
-
-——from pytorch.org
 
 ![卷积例子](../images/Con2d_eg.png)
 
