@@ -1,11 +1,17 @@
 import pickle
 import numpy as np
-import time
+import matplotlib.pyplot as plt
 
 
 class Model:
     layers = {"has_param": [], "trace": []}
     __train = True
+
+    def __init__(self):
+        # loss acc
+        self.loss = []
+        self.train_acc = []
+        self.test_acc = []
 
     # 反向传播，卷积层使用了95%的时间
     def backwards(self, gradient):
@@ -42,6 +48,21 @@ class Model:
     def is_training(self):
         return Model.__train
 
+    # 绘制acc loss
+    def log_visualization(self):
+        plt.subplot(2, 1, 1)
+        plt.plot(range(len(self.loss)), self.loss)
+        plt.title("its-loss")
+        plt.xlabel("its")
+        plt.ylabel("loss")
+        plt.subplot(2, 1, 2)
+        plt.plot(range(len(self.train_acc)), self.train_acc)
+        plt.plot(range(len(self.test_acc)), self.test_acc)
+        plt.title("its-acc")
+        plt.ylabel("acc")
+        plt.xlabel("its")
+        plt.show()
+
     # 用户实现
     def forward(self, X):
         raise Exception("forward not implement")
@@ -70,7 +91,6 @@ class Layer(Model):
     # 初始化参数
     def generate_param(self, low, high, shape):
         param = np.random.uniform(low, high, shape) * 0.1
-        # param = np.ones(shape)
         return param
 
 

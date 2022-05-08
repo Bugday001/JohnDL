@@ -37,7 +37,6 @@ class Padding(Model):
 
     def backward(self, gradient):
         pad = self.__pad
-        X_shape = self.mem["X_shape"]
         return gradient[..., pad[0]:(gradient.shape[2]-pad[0]), pad[1]:(gradient.shape[3]-pad[1])]
 
 
@@ -159,7 +158,7 @@ class Flatten(Model):
 class MaxPooling(Layer):
     name = "maxpooling"
 
-    def __init__(self, pool_size=(2, 2), stride=None, padding=0):
+    def __init__(self, pool_size=(2, 2), stride=None):
 
         self.pool_size = pool_size
         if stride is None:
@@ -185,8 +184,7 @@ class MaxPooling(Layer):
 class AvgPooling(Layer):
     name = "Avgpooling"
 
-    def __init__(self, pool_size=(2, 2), stride=None, padding=0):
-        super().__init__(self)
+    def __init__(self, pool_size=(2, 2), stride=None):
         self.pool_size = pool_size
         if stride is None:
             self.stride = pool_size
