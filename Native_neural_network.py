@@ -2,65 +2,43 @@ import numpy as np
 from Linear_Layers import Linear, Dropout, BatchNormalization
 from Convolution_Layer import Conv2D, Flatten, MaxPooling, AvgPooling
 from ActivationFunction import Relu, Softmax, Sigmoid, Tanh
-from Loss import  CategoricalCrossEntropy, Mse
+from Loss import CategoricalCrossEntropy, Mse
 from tqdm import tqdm
 import tensorflow as tf
 from Datasets import DataLoader, create_data
 from Utils import one_hot, computeAccuracy, evaluate
-import JohnDL as John
+import JohnDL as Jh
 from optimizers import Fixed, Adam
 import math
 import time
 from functools import wraps
 
 
-# @fn_timer放在函数前
-def fn_timer(function):
-    @wraps(function)
-    def function_timer(*args, **kwargs):
-        t0 = time.time()
-        result = function(*args, **kwargs)
-        t1 = time.time()
-        print("Total time running %s: %s seconds" %
-              (function.__name__, str(t1 - t0))
-              )
-        return result
-
-    return function_timer
-
-
-# 搭建全连接神经网络模型
-class FullConnectionModel(John.Model):
+# 搭建神经网络模型
+class MyModel(Jh.Model):
     def __init__(self, input_size, class_dim):
-        super().__init__(None)
-        self.conv2d1 = Conv2D(1, 4, kernel_size=(3, 3), padding=1)
-        self.maxpool1 = MaxPooling((2, 2))
-        self.BN = BatchNormalization(4, 4)
-        self.relu0 = Relu()
-        self.conv2d2 = Conv2D(4, 4, kernel_size=(3, 3), padding=1, stride=(1, 1))
-        self.maxpool2 = MaxPooling((2, 2))
-        self.flatten = Flatten()
-        self.relu1 = Relu()
-        self.linear2 = Linear(7 * 7 * 4, 128)
-        self.dropout = Dropout(0.1)
-        self.relu2 = Relu()
-        self.linear3 = Linear(128, class_dim)
+        self.ConvUnit = Jh.Unit(
+            Conv2D(1, 4, kernel_size=(3, 3), padding=1),
+            MaxPooling((2, 2)),
+            BatchNormalization((4, 14, 14), 4),
+            Relu(),
+            Conv2D(4, 4, kernel_size=(3, 3), padding=1, stride=(1, 1)),
+            MaxPooling((2, 2)),
+            Flatten(),
+        )
+        self.LinearUint = Jh.Unit(
+            Relu(),
+            Linear(7 * 7 * 4, 128),
+            # Dropout(0.1),
+            Relu(),
+            Linear(128, class_dim),
+        )
 
     def forward(self, X):
         if len(X.shape) == 3:
             X = X.reshape((X.shape[0], 1, X.shape[-2], X.shape[-1]))
-        X = self.conv2d1(X)
-        X = self.maxpool1(X)
-        X = self.BN(X)
-        X = self.relu0(X)
-        X = self.conv2d2(X)
-        X = self.maxpool2(X)
-        X = self.flatten(X)
-        X = self.relu1(X)
-        X = self.linear2(X)
-        X = self.dropout(X)
-        X = self.relu2(X)
-        res = self.linear3(X)
+        X = self.ConvUnit(X)
+        res = self.LinearUint(X)
         return res
 
 
@@ -72,7 +50,7 @@ def train(x_train, y_train, x_validation, y_validation):
 
     print("Start training...\n")
     # 模型
-    model = FullConnectionModel(28 * 28, 10)
+    model = MyModel(28 * 28, 10)
     # 损失函数
     criterion = CategoricalCrossEntropy()
     # 优化器
@@ -98,10 +76,11 @@ def train(x_train, y_train, x_validation, y_validation):
                 # acc
                 acc = computeAccuracy(pre_y, y)
                 _tqdm.set_postfix(
-                    {"loss": '{:.6f}'.format(loss), "ACC": '{:.6f}'.format(acc)})  # 输入一个字典
+                    {"loss": '{:.6f}'.format(loss), "acc": '{:.6f}'.format(acc)})  # 输入一个字典
                 _tqdm.update(1)  # 设置你每一次想让进度条更新的iteration 大小
                 end = time.time()
                 # 打印各部分时间，forward:0.33, backward: 0.87, whole: 1.193
+                # 优化后:forward:0.0249, backward: 0.0324, whole: 0.058
                 # print("forward:", forward_time-start,
                 #       "backward:", backward_time-forward_time,
                 #       "all:", end-start)
@@ -151,5 +130,4 @@ def hand_write():
 
 
 if __name__ == '__main__':
-    # AndTest()
     hand_write()

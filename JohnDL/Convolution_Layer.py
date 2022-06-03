@@ -14,10 +14,12 @@ class Padding(Model):
     params:
     padding 填充大小(目前默认四边填充，相同范围)
     value 填充值，默认0
+    mode 填充方式
     """
 
     def __init__(self, pad, value=0, mode="constant"):
 
+        super().__init__()
         self.__pad = pad
         self.__value = value
         self.__mode = mode
@@ -50,10 +52,13 @@ class Conv2D(Layer):
     kernel_size:卷积核大小,如(3,3)
     stride:步长，默认 1。如果输入元组，第一个值是行方向(竖直移动时)的stride
     padding: 默认 0
+    pad_mode：填充方式，默认"constant"
+    pad_value：填充值，默认0
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, pad_mode="constant", pad_value=0):
 
+        super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -97,8 +102,7 @@ class Conv2D(Layer):
             res[:, j] += self.b.value[j]
         return res
 
-        # 反向
-
+    # 反向
     def backward(self, grad):
         X = self.mem["X"]
         # 若stride不为1则需要填充

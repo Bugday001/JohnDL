@@ -11,11 +11,13 @@
 - Softmax, tanh, Relu, Sigmoid
 - 交叉损失熵，均方误差损失
 
-示例可参见`Native_Network.py`或`Other_Network.py`
+示例可参见`Native_Network.py`和`LeNet.py`
 
 **Note**
 
 - 目前定义网络必须使用JohnDL.Unit()
+- 文件含有LeNet5示例。使用train.py训练，test.py测试
+- Native_Network.py中的与逻辑(Andtest function)测试需要用户自己设定网络，并初始化设置。
 
 ## 文件结构
 - doc：文档及学习记录

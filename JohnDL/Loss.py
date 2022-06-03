@@ -18,11 +18,7 @@ class CrossEntropy:
         return -y * (1 / (p + self.epsilon))
 
 
-'''
-多类别交叉熵损失函数
-'''
-
-
+# 多类别交叉熵损失函数
 class CategoricalCrossEntropy:
     """
     form_logits: 是否把输入数据转换成概率形式. 默认True.
@@ -39,10 +35,8 @@ class CategoricalCrossEntropy:
     '''
 
     def __call__(self, y_true, y_pred):
-        # m = y_true.shape[0]
         n = y_true.shape[-1]
         m = y_true.reshape((-1, n)).shape[0]
-        # pdb.set_trace()
         if not self.__form_logists:
             # 计算误差
             loss = (-y_true * np.log(y_pred)).sum(axis=0) / m
@@ -52,7 +46,6 @@ class CategoricalCrossEntropy:
 
         # 转换成概率分布
         y_prob = F.prob_distribution(y_pred)
-        # pdb.set_trace()
         # 计算误差
         loss = (-y_true * np.log(y_prob+self.epsilon)).sum(axis=0) / m
         # 计算梯度
@@ -77,7 +70,6 @@ class Mse:
 
         n = y_true.shape[0]
         self.__grad = err / n
-        # pdb.set_trace()
         return loss.sum()
 
     @property

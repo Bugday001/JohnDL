@@ -38,5 +38,5 @@ $$x_t\leftarrow x_{t-1}-g'_t$$
 
 
 
-# Reference
+## Reference
 - [1][SGD及其改进优化器](https://zhuanlan.zhihu.com/p/152566066)

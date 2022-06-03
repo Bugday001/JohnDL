@@ -1,7 +1,6 @@
-import numpy as np
-from Linear_Layers import Linear, Dropout, BatchNormalization
-from Convolution_Layer import Conv2D, Flatten, MaxPooling, AvgPooling
-from ActivationFunction import Relu, Softmax, Sigmoid, Tanh
+from Linear_Layers import Linear
+from Convolution_Layer import Conv2D, Flatten, AvgPooling
+from ActivationFunction import Relu
 import JohnDL as Jh
 
 

@@ -65,11 +65,10 @@ def hand_write():
     model = train(X_train, y_train, X_test, y_test)
     accuracy = evaluate(model, X_test, y_test)
     print(f'Evaluate the best model, test accuracy={accuracy:0<8.6}.')
-    path = "Models/LeNet_Minst1.John"
+    path = "Models/LeNet_Minst2.John"
     model.save(path)
     print("save models at:", path)
 
 
 if __name__ == '__main__':
-    # AndTest()
     hand_write()
