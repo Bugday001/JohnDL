@@ -117,6 +117,7 @@ class LayerParam(object):
 # 序列
 class Unit(Model):
     def __init__(self, *args):
+        super().__init__()
         self.layers = {"unit_trace": []}
         self.isTraced = False
         for module in args:

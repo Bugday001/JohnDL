@@ -38,6 +38,7 @@ def train(x_train, y_train, x_validation, y_validation):
                 optimizer.step()
                 # acc
                 acc = computeAccuracy(pre_y, y)
+                # 记录acc和loss用于绘图
                 # accuracy = evaluate(model, x_validation, y_validation)
                 model.train_acc.append(acc)
                 # model.test_acc.append(accuracy)
@@ -65,7 +66,7 @@ def hand_write():
     model = train(X_train, y_train, X_test, y_test)
     accuracy = evaluate(model, X_test, y_test)
     print(f'Evaluate the best model, test accuracy={accuracy:0<8.6}.')
-    path = "Models/LeNet_Minst2.John"
+    path = "Models/LeNet_Minst1.John"
     model.save(path)
     print("save models at:", path)
 
